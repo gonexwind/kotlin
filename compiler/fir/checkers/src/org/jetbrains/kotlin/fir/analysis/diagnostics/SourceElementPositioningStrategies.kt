@@ -257,4 +257,8 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.IMPORT_LAST_NAME,
         PositioningStrategies.IMPORT_LAST_NAME
     )
+
+    // TODO
+    val ACTUAL_DECLARATION_NAME = DEFAULT
+    val INCOMPATIBLE_DECLARATION = DEFAULT
 }
