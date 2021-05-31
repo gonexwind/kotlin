@@ -15,7 +15,10 @@ import kotlin.reflect.KClass
 
 interface FirSessionComponent
 
-abstract class FirSession @PrivateSessionConstructor constructor(val sessionProvider: FirSessionProvider?) : ComponentArrayOwner<FirSessionComponent, FirSessionComponent>() {
+abstract class FirSession @PrivateSessionConstructor constructor(
+    val sessionProvider: FirSessionProvider?,
+    val kind: Kind
+) : ComponentArrayOwner<FirSessionComponent, FirSessionComponent>() {
     companion object : TypeRegistry<FirSessionComponent, FirSessionComponent>() {
         inline fun <reified T : FirSessionComponent> sessionComponentAccessor(): ArrayMapAccessor<FirSessionComponent, FirSessionComponent, T> {
             return generateAccessor(T::class)
@@ -40,6 +43,10 @@ abstract class FirSession @PrivateSessionConstructor constructor(val sessionProv
     override fun toString(): String {
         val moduleData = nullableModuleData ?: return "Libraries session"
         return "Source session for module ${moduleData.name}"
+    }
+
+    enum class Kind {
+        Source, Library
     }
 }
 
