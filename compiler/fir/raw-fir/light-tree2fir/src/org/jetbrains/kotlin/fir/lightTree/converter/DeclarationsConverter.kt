@@ -50,6 +50,7 @@ import org.jetbrains.kotlin.fir.types.impl.FirTypeArgumentListImpl
 import org.jetbrains.kotlin.lexer.KtModifierKeywordToken
 import org.jetbrains.kotlin.lexer.KtTokens.*
 import org.jetbrains.kotlin.name.*
+import org.jetbrains.kotlin.psi.psiUtil.hasExpectModifier
 import org.jetbrains.kotlin.utils.addToStdlib.runIf
 
 class DeclarationsConverter(
@@ -756,6 +757,8 @@ class DeclarationsConverter(
         isEnumEntry: Boolean = false
     ): PrimaryConstructor? {
         if (primaryConstructor == null && !classWrapper.isEnumEntry() && classWrapper.hasSecondaryConstructor) return null
+        val classKind = classWrapper.classBuilder.classKind
+        if (primaryConstructor == null && (classWrapper.hasExpect() && classKind == ClassKind.ENUM_CLASS)) return null
         if (classWrapper.isInterface()) return null
 
         var modifiers = Modifier()
