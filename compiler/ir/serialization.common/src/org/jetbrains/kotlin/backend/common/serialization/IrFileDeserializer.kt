@@ -5,7 +5,6 @@
 
 package org.jetbrains.kotlin.backend.common.serialization
 
-import org.jetbrains.kotlin.descriptors.ModuleDescriptor
 import org.jetbrains.kotlin.descriptors.impl.EmptyPackageFragmentDescriptor
 import org.jetbrains.kotlin.ir.declarations.IrDeclaration
 import org.jetbrains.kotlin.ir.declarations.IrFile
@@ -64,8 +63,7 @@ class FileDeserializationState(
     deserializeBodies: Boolean,
     allowErrorNodes: Boolean,
     deserializeInlineFunctions: Boolean,
-    moduleDeserializer: IrModuleDeserializer,
-    handleNoModuleDeserializerFound: (IdSignature, ModuleDescriptor, Collection<IrModuleDeserializer>) -> IrModuleDeserializer,
+    moduleDeserializer: IrModuleDeserializer
 ) {
 
     val symbolDeserializer =
@@ -75,12 +73,13 @@ class FileDeserializationState(
             assert(idSig.isPublic)
 
             val topLevelSig = idSig.topLevelSignature()
-            val actualModuleDeserializer =
-                moduleDeserializer.findModuleDeserializerForTopLevelId(topLevelSig) ?: handleNoModuleDeserializerFound(
-                    idSig,
-                    moduleDeserializer.moduleDescriptor,
-                    moduleDeserializer.moduleDependencies
-                )
+            val actualModuleDeserializer = moduleDeserializer.findModuleDeserializerForTopLevelId(topLevelSig)
+                ?: run {
+                    // The symbol might be gone in newer version of dependency KLIB. Then the KLIB that was compiled against
+                    // the older version of dependency KLIB will still have a reference to non-existing symbol. And the linker will have to
+                    // handle such situation appropriately. See KT-41378.
+                    linker.handleSignatureIdNotFoundInModuleWithDependencies(idSig, moduleDeserializer)
+                }
 
             actualModuleDeserializer.deserializeIrSymbol(idSig, symbolKind)
         }

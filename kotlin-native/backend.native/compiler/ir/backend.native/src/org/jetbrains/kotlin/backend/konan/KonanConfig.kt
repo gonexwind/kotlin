@@ -6,6 +6,7 @@
 package org.jetbrains.kotlin.backend.konan
 
 import com.intellij.openapi.project.Project
+import org.jetbrains.kotlin.backend.konan.serialization.KonanUserVisibleIrModulesSupport
 import org.jetbrains.kotlin.cli.common.CLIConfigurationKeys
 import org.jetbrains.kotlin.cli.common.config.kotlinSourceRoots
 import org.jetbrains.kotlin.cli.common.messages.CompilerMessageSeverity
@@ -88,6 +89,14 @@ class KonanConfig(val project: Project, val configuration: CompilerConfiguration
     )
 
     internal val resolvedLibraries get() = resolve.resolvedLibraries
+
+    internal val userVisibleIrModulesSupport = KonanUserVisibleIrModulesSupport(
+            resolvedLibraries = resolvedLibraries,
+            konanKlibDir = File(distribution.klib),
+            externalDependenciesFile = configuration.get(KonanConfigKeys.EXTERNAL_DEPENDENCIES)?.let(::File),
+            onMalformedExternalDependencies = { warningMessage ->
+                configuration.report(CompilerMessageSeverity.STRONG_WARNING, warningMessage)
+            })
 
     internal val cacheSupport = CacheSupport(configuration, resolvedLibraries, target, produce)
 

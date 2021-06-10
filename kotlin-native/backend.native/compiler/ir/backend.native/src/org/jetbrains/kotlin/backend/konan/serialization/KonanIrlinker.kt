@@ -20,6 +20,7 @@ import org.jetbrains.kotlin.backend.common.overrides.FakeOverrideBuilder
 import org.jetbrains.kotlin.backend.common.overrides.FakeOverrideClassFilter
 import org.jetbrains.kotlin.backend.common.serialization.*
 import org.jetbrains.kotlin.backend.common.serialization.encodings.BinarySymbolData
+import org.jetbrains.kotlin.backend.common.serialization.linkerissues.UserVisibleIrModulesSupport
 import org.jetbrains.kotlin.backend.common.serialization.signature.IdSignatureSerializer
 import org.jetbrains.kotlin.backend.konan.CachedLibraries
 import org.jetbrains.kotlin.backend.konan.descriptors.isInteropLibrary
@@ -76,7 +77,8 @@ internal class KonanIrLinker(
         private val stubGenerator: DeclarationStubGenerator,
         private val cenumsProvider: IrProviderForCEnumAndCStructStubs,
         exportedDependencies: List<ModuleDescriptor>,
-        private val cachedLibraries: CachedLibraries
+        private val cachedLibraries: CachedLibraries,
+        override val userVisibleIrModulesSupport: UserVisibleIrModulesSupport
 ) : KotlinIrLinker(currentModule, messageLogger, builtIns, symbolTable, exportedDependencies) {
 
     companion object {
@@ -206,7 +208,7 @@ internal class KonanIrLinker(
             val descriptor = resolveDescriptor(idSig)
             val actualModule = descriptor.module
             if (actualModule !== moduleDescriptor) {
-                val moduleDeserializer = deserializersForModules[actualModule] ?: error("No module deserializer for $actualModule")
+                val moduleDeserializer = resolveModuleDeserializer(actualModule, idSig)
                 moduleDeserializer.addModuleReachableTopLevel(idSig)
                 return symbolTable.referenceClassFromLinker(idSig)
             }
@@ -224,6 +226,7 @@ internal class KonanIrLinker(
                     .filter { !it.key.isForwardDeclarationModule && it.value.moduleDescriptor !== currentModule }
                     .forEach { this.put(it.key.konanLibrary!!.libraryName, it.value.moduleFragment) }
         }
+
     class KonanPluginContext(
             override val moduleDescriptor: ModuleDescriptor,
             override val symbolTable: ReferenceSymbolTable,

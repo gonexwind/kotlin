@@ -114,7 +114,6 @@ abstract class BasicIrModuleDeserializer(
             allowErrorNodes,
             strategy.inlineBodies,
             moduleDeserializer,
-            linker::handleNoModuleDeserializerFound,
         )
 
         fileToDeserializerMap[file] = fileDeserializationState.fileDeserializer
