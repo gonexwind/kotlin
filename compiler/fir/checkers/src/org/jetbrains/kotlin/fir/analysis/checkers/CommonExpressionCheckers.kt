@@ -19,6 +19,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
             FirReservedUnderscoreExpressionChecker,
             FirExpressionAnnotationChecker,
+            FirDeprecationChecker,
         )
 
     override val qualifiedAccessExpressionCheckers: Set<FirQualifiedAccessExpressionChecker>

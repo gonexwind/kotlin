@@ -8,8 +8,8 @@ typealias Test1 = Foo
 typealias Test2 = List<Foo>
 typealias Test3 = List<Test2>
 
-typealias TestErr1 = Err
-typealias TestErr2 = List<Err>
+typealias TestErr1 = <!DEPRECATION_ERROR!>Err<!>
+typealias TestErr2 = List<<!DEPRECATION_ERROR!>Err<!>>
 typealias TestErr3 = List<TestErr2>
 
 fun use1(b: Test1) = b

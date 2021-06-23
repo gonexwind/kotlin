@@ -28,13 +28,13 @@ var v6: String
 
 fun test() {
     v1
-    v2
+    <!INVISIBLE_REFERENCE!>v2<!>
     v3
     v3 = ""
     v4
     v4 = ""
     v5
     v5 = ""
-    v6
-    v6 = ""
+    <!INVISIBLE_REFERENCE!>v6<!>
+    <!INVISIBLE_REFERENCE!>v6<!> = ""
 }
