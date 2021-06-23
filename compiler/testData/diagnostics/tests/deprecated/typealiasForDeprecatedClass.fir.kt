@@ -4,8 +4,8 @@ class Foo
 @Deprecated("", level = DeprecationLevel.ERROR)
 class Err
 
-typealias Test1 = Foo
-typealias Test2 = List<Foo>
+typealias Test1 = <!DEPRECATION!>Foo<!>
+typealias Test2 = List<<!DEPRECATION!>Foo<!>>
 typealias Test3 = List<Test2>
 
 typealias TestErr1 = <!DEPRECATION_ERROR!>Err<!>

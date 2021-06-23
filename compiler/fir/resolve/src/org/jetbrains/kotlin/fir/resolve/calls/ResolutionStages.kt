@@ -29,6 +29,7 @@ import org.jetbrains.kotlin.name.Name
 import org.jetbrains.kotlin.resolve.calls.tasks.ExplicitReceiverKind.*
 import org.jetbrains.kotlin.types.AbstractNullabilityChecker
 import org.jetbrains.kotlin.types.SmartcastStability
+import org.jetbrains.kotlin.utils.addIfNotNull
 
 abstract class ResolutionStage {
     abstract suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext)
@@ -298,8 +299,8 @@ internal object CheckCallModifiers : CheckerStage() {
 internal object CheckDeprecatedSinceKotlin : ResolutionStage() {
     override suspend fun check(candidate: Candidate, callInfo: CallInfo, sink: CheckerSink, context: ResolutionContext) {
         val fir = (candidate.symbol as? FirCallableSymbol<*>)?.fir ?: return
-        val hiddenSince = fir.getDeprecationInfoCached().hiddenSince ?: return
-        if (context.session.languageVersionSettings.apiVersion >= hiddenSince) {
+        val deprecation = fir.getDeprecation(callInfo.callSite, context.session.languageVersionSettings.apiVersion)
+        if (deprecation != null && deprecation.level == DeprecationLevelValue.HIDDEN) {
             sink.yieldDiagnostic(HiddenCandidate)
         }
     }

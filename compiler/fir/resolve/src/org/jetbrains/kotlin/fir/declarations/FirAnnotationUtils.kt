@@ -97,6 +97,12 @@ fun FirAnnotationContainer.getAnnotationByFqName(fqName: FqName): FirAnnotationC
     }
 }
 
+fun FirAnnotationContainer.getAnnotationsByFqName(fqName: FqName): List<FirAnnotationCall> {
+    return annotations.filter {
+        it.annotationTypeRef.coneTypeUnsafe<ConeClassLikeType>().lookupTag.classId.asSingleFqName() == fqName
+    }
+}
+
 fun FirAnnotationCall.findArgumentByName(name: Name): FirExpression? {
     val argumentMapping = argumentMapping
     if (argumentMapping != null) {
