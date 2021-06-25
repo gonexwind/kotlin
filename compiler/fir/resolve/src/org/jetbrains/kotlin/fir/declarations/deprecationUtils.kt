@@ -47,15 +47,6 @@ private fun FirAnnotationContainer.getDeprecationInfos(
     if (visited.contains(this)) return EmptyDeprecationInfosForUseSite //break circle for cyclic inheritances
     val ownDeprecation = getOwnDeprecationInfo(sessionHolder.session.languageVersionSettings.apiVersion)
     val inheritedDeprecation = when (this) {
-        is FirClass<*> -> {
-            if (ownDeprecation.isNotEmpty()) return ownDeprecation
-            superConeTypes.collectFirstNotNull { superType ->
-                superType.lookupTag
-                    .toFirRegularClass(sessionHolder.session)
-                    ?.getDeprecationInfosCached(sessionHolder, visited + this)
-                    ?.takeIf { it.isNotEmpty() }
-            }
-        }
         is FirSimpleFunction -> {
             val scope = containingScope(sessionHolder) ?: return ownDeprecation
             val deprecations = scope.getDirectOverriddenFunctions(symbol).map { sym ->
@@ -246,12 +237,3 @@ enum class DeprecationLevelValue {
 }
 
 private val EmptyDeprecationInfosForUseSite = DeprecationInfoForUseSites(null, null)
-
-
-private fun <T, R> Collection<T>.collectFirstNotNull(f: (T) -> R?): R? {
-    for (el in this) {
-        val r = f(el)
-        if (r != null) return r
-    }
-    return null
-}
