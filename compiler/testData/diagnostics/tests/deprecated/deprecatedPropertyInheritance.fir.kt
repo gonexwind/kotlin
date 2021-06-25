@@ -115,11 +115,11 @@ fun use(
     ed.<!DEPRECATION_ERROR!>p<!>
     ed.p <!DEPRECATION_ERROR!>=<!> 1
 
-    gd.p
+    gd.<!DEPRECATION!>p<!>
     gd.p = 1
 
     sd.p
-    sd.p = 1
+    sd.p <!DEPRECATION!>=<!> 1
 
     sdh.p
     sdh.p = 1

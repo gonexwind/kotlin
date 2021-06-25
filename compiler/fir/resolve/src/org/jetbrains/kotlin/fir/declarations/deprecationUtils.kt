@@ -34,13 +34,17 @@ private val WARNING_SINCE_NAME = Name.identifier("warningSince")
 private val MESSAGE_NAME = Name.identifier("message")
 private val LEVEL_NAME = Name.identifier("level")
 
-private object FirDeprecationInfoKey : FirDeclarationDataKey(), NotCopyableDataKey
+private object FirDeprecationInfoKey : FirDeclarationDataKey(), NotCopyableDataKeyMarker
 
 private var FirAnnotatedDeclaration.deprecationInfoValue: DeprecationInfoForUseSites? by FirDeclarationDataRegistry.data(
     FirDeprecationInfoKey
 )
 
-private fun FirAnnotationContainer.getDeprecationInfos(sessionHolder: SessionHolder): DeprecationInfoForUseSites {
+private fun FirAnnotationContainer.getDeprecationInfos(
+    sessionHolder: SessionHolder,
+    visited: Set<FirAnnotationContainer> = emptySet()
+): DeprecationInfoForUseSites {
+    if (visited.contains(this)) return EmptyDeprecationInfosForUseSite //break circle for cyclic inheritances
     val ownDeprecation = getOwnDeprecationInfo(sessionHolder.session.languageVersionSettings.apiVersion)
     val inheritedDeprecation = when (this) {
         is FirClass<*> -> {
@@ -48,7 +52,7 @@ private fun FirAnnotationContainer.getDeprecationInfos(sessionHolder: SessionHol
             superConeTypes.collectFirstNotNull { superType ->
                 superType.lookupTag
                     .toFirRegularClass(sessionHolder.session)
-                    ?.getDeprecationInfosCached(sessionHolder)
+                    ?.getDeprecationInfosCached(sessionHolder, visited + this)
                     ?.takeIf { it.isNotEmpty() }
             }
         }
@@ -76,12 +80,15 @@ private fun FirCallableMemberDeclaration<*>.containingScope(sessionHolder: Sessi
 }
 
 
-private fun FirAnnotatedDeclaration.getDeprecationInfosCached(sessionHolder: SessionHolder): DeprecationInfoForUseSites {
+private fun FirAnnotatedDeclaration.getDeprecationInfosCached(
+    sessionHolder: SessionHolder,
+    visited: Set<FirAnnotationContainer> = emptySet()
+): DeprecationInfoForUseSites {
     val cached = deprecationInfoValue
     return if (cached != null) {
         cached
     } else {
-        val calculated = getDeprecationInfos(sessionHolder)
+        val calculated = getDeprecationInfos(sessionHolder, visited)
         deprecationInfoValue = calculated
         calculated
     }
@@ -98,12 +105,12 @@ fun <T : FirAnnotatedDeclaration> T.getDeprecation(callSite: FirElement?, sessio
     when (this) {
         is FirProperty ->
             if (callSite is FirVariableAssignment) {
-                deprecationInfos.addIfNotNull(setter?.getDeprecationForCallSite(sessionHolder))
+//                deprecationInfos.addIfNotNull(setter?.getDeprecationForCallSite(sessionHolder))
                 deprecationInfos.addIfNotNull(
                     getDeprecationForCallSite(sessionHolder, AnnotationUseSiteTarget.PROPERTY_SETTER, AnnotationUseSiteTarget.PROPERTY)
                 )
             } else {
-                deprecationInfos.addIfNotNull(getter?.getDeprecationForCallSite(sessionHolder))
+//                deprecationInfos.addIfNotNull(getter?.getDeprecationForCallSite(sessionHolder))
                 deprecationInfos.addIfNotNull(
                     getDeprecationForCallSite(sessionHolder, AnnotationUseSiteTarget.PROPERTY_GETTER, AnnotationUseSiteTarget.PROPERTY)
                 )
@@ -131,7 +138,8 @@ private fun FirAnnotationCall.getDeprecationLevel(): DeprecationLevelValue? =
 
 private fun FirAnnotationContainer.getOwnDeprecationInfo(currentVersion: ApiVersion): DeprecationInfoForUseSites {
     val annotations = getAnnotationsByFqName(StandardNames.FqNames.deprecated) + getAnnotationsByFqName(JAVA_DEPRECATED)
-    val deprecationByUseSite = annotations.mapNotNull { deprecated ->
+    val deprecationByUseSite = mutableMapOf<AnnotationUseSiteTarget?, Deprecation>()
+    annotations.mapNotNull { deprecated ->
         val deprecationLevel = deprecated.getDeprecationLevel() ?: DeprecationLevelValue.WARNING
         val deprecatedSinceKotlin = getAnnotationByFqName(StandardNames.FqNames.deprecatedSinceKotlin)
 
@@ -147,7 +155,12 @@ private fun FirAnnotationContainer.getOwnDeprecationInfo(currentVersion: ApiVers
         appliedLevel?.let {
             deprecated.useSiteTarget to Deprecation(it, deprecated.getStringArgument(MESSAGE_NAME))
         }
-    }.toMap()
+    }.toMap(deprecationByUseSite)
+
+    if (this is FirProperty) {
+        setter?.getOwnDeprecationInfo(currentVersion)?.all?.let { deprecationByUseSite.put(AnnotationUseSiteTarget.PROPERTY_SETTER, it) }
+        getter?.getOwnDeprecationInfo(currentVersion)?.all?.let { deprecationByUseSite.put(AnnotationUseSiteTarget.PROPERTY_GETTER, it) }
+    }
 
     if (deprecationByUseSite.isEmpty()) return EmptyDeprecationInfosForUseSite
 
@@ -160,7 +173,7 @@ private fun FirAnnotationContainer.getOwnDeprecationInfo(currentVersion: ApiVers
 }
 
 class DeprecationInfoForUseSites(
-    private val all: Deprecation?,
+    val all: Deprecation?,
     private val bySpecificSite: Map<AnnotationUseSiteTarget, Deprecation>?
 ) {
     fun forCallSite(vararg sites: AnnotationUseSiteTarget): Deprecation? {
