@@ -82,6 +82,8 @@ abstract class TypeRegistry<K : Any, V : Any> {
         return idPerType
     }
 
+    fun allKeys(): List<KClass<out K>> = idPerType.keys().toList()
+
     protected val indices: Collection<Int>
         get() = idPerType.values
 }

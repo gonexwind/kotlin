@@ -109,11 +109,11 @@ fun use(
     hiddenDeprecated.<!INVISIBLE_REFERENCE!>p<!>
     hiddenDeprecated.<!INVISIBLE_REFERENCE!>p<!> = 1
 
-    wd.p
-    wd.p = 1
+    wd.<!DEPRECATION!>p<!>
+    wd.p <!DEPRECATION!>=<!> 1
 
-    ed.p
-    ed.p = 1
+    ed.<!DEPRECATION_ERROR!>p<!>
+    ed.p <!DEPRECATION_ERROR!>=<!> 1
 
     gd.p
     gd.p = 1
@@ -124,8 +124,8 @@ fun use(
     sdh.p
     sdh.p = 1
 
-    edh.p
-    edh.p = 1
+    edh.<!DEPRECATION_ERROR!>p<!>
+    edh.p <!DEPRECATION_ERROR!>=<!> 1
 
     ned.p
     ned.p = 1

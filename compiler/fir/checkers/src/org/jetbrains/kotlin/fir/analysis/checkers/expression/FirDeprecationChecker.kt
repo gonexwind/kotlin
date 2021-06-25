@@ -55,13 +55,12 @@ object FirDeprecationChecker : FirBasicExpressionChecker() {
         callSite: FirElement?,
         fir: T,
         context: CheckerContext
-    ): AppliedDeprecation? {
-        val currentVersion = context.session.languageVersionSettings.apiVersion
+    ): Deprecation? {
         val deprecationInfos = listOfNotNull(
-            fir.getDeprecation(callSite, currentVersion),
+            fir.getDeprecation(callSite, context.sessionHolder),
             fir.safeAs<FirConstructor>()?.returnTypeRef
                 ?.toRegularClass(context.session)
-                ?.getDeprecation(callSite, currentVersion)
+                ?.getDeprecation(callSite, context.sessionHolder)
         )
         return deprecationInfos.maxOrNull()
     }
