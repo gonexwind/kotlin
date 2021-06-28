@@ -215,9 +215,13 @@ class DeprecationInfoForUseSites(
             bySpecificSite?.filterValues { it.inheritable }
         )
 
+    override fun toString(): String =
+        if (isEmpty()) "NoDeprecation"
+        else "DeprecationInfoForUseSites(all=$all, bySpecificSite=$bySpecificSite)"
+
 }
 
-class Deprecation(
+data class Deprecation(
     val level: DeprecationLevelValue,
     val inheritable: Boolean,
     val message: String? = null

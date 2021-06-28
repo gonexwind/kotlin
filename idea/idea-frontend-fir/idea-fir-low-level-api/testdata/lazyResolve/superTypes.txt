@@ -1,3 +1,4 @@
+
 RAW_FIR:
 FILE: superTypes.kt
     public? open [RAW_FIR] class A : R|kotlin/Any| {
@@ -148,7 +149,7 @@ FILE: superTypes.kt
 BODY_RESOLVE:
 FILE: superTypes.kt
     public open [STATUS] [ResolvePhaseWithForAllDeclarationsKey=TYPES] class A : R|kotlin/Any| {
-        public [STATUS] [ContainingClassKey=A] constructor(): R|A| {
+        public [STATUS] [ContainingClassKey=A, FirDeprecationInfoKey=NoDeprecation] constructor(): R|A| {
             super<R|kotlin/Any|>()
         }
 
@@ -190,7 +191,7 @@ FILE: superTypes.kt
 BodyResolveWithChildren:
 FILE: superTypes.kt
     public open [STATUS] [ResolvePhaseWithForAllDeclarationsKey=TYPES] class A : R|kotlin/Any| {
-        public [STATUS] [ContainingClassKey=A] constructor(): R|A| {
+        public [STATUS] [ContainingClassKey=A, FirDeprecationInfoKey=NoDeprecation] constructor(): R|A| {
             super<R|kotlin/Any|>()
         }
 
@@ -232,7 +233,7 @@ FILE: superTypes.kt
 AnnotationsArguments:
 FILE: superTypes.kt
     public open [STATUS] [ResolvePhaseWithForAllDeclarationsKey=TYPES] class A : R|kotlin/Any| {
-        public [STATUS] [ContainingClassKey=A] constructor(): R|A| {
+        public [STATUS] [ContainingClassKey=A, FirDeprecationInfoKey=NoDeprecation] constructor(): R|A| {
             super<R|kotlin/Any|>()
         }
 
@@ -337,7 +338,7 @@ FILE: superTypes.kt
 FILE RAW TO BODY:
 FILE: superTypes.kt
     public open [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] class A : R|kotlin/Any| {
-        public [BODY_RESOLVE] [ContainingClassKey=A] constructor(): R|A| {
+        public [BODY_RESOLVE] [ContainingClassKey=A, FirDeprecationInfoKey=NoDeprecation] constructor(): R|A| {
             super<R|kotlin/Any|>()
         }
 

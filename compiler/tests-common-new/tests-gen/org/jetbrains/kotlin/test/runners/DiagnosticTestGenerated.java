@@ -7953,7 +7953,7 @@ public class DiagnosticTestGenerated extends AbstractDiagnosticTest {
 
             @Test
             @TestMetadata("deprecatedError.kt")
-            public void testDeprecatedError111() throws Exception {
+            public void testDeprecatedError() throws Exception {
                 runTest("compiler/testData/diagnostics/tests/deprecated/deprecatedError.kt");
             }
 

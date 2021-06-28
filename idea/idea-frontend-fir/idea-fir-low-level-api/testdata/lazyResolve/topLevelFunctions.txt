@@ -1,3 +1,4 @@
+
 RAW_FIR:
 FILE: topLevelFunctions.kt
     public? final? [RAW_FIR] fun resolveMe(): R|kotlin/Unit| {
@@ -80,9 +81,9 @@ FILE: topLevelFunctions.kt
     public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun resolveMe(): R|kotlin/Unit| {
         R|/receive|(R|/functionWithLazyBody|())
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
         ^functionWithLazyBody String(42)
     }
 
@@ -102,9 +103,9 @@ FILE: topLevelFunctions.kt
     public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun resolveMe(): R|kotlin/Unit| {
         R|/receive|(R|/functionWithLazyBody|())
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
         ^functionWithLazyBody String(42)
     }
 
@@ -113,9 +114,9 @@ FILE: topLevelFunctions.kt
     public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun resolveMe(): R|kotlin/Unit| {
         R|/receive|(R|/functionWithLazyBody|())
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
         ^functionWithLazyBody String(42)
     }
 
@@ -146,9 +147,9 @@ FILE: topLevelFunctions.kt
     public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun resolveMe(): R|kotlin/Unit| {
         R|/receive|(R|/functionWithLazyBody|())
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/String|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun functionWithLazyBody(): R|kotlin/String| {
         ^functionWithLazyBody String(42)
     }
 
@@ -201,8 +202,8 @@ FILE: topLevelFunctions.kt
     public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun resolveMe(): R|kotlin/Unit| {
         R|/receive|(R|/functionWithLazyBody|())
     }
-    public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun receive([BODY_RESOLVE] value: R|kotlin/String|): R|kotlin/Unit| {
+    public final [BODY_RESOLVE] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun receive([BODY_RESOLVE] value: R|kotlin/String|): R|kotlin/Unit| {
     }
-    public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun functionWithLazyBody(): R|kotlin/String| {
+    public final [BODY_RESOLVE] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun functionWithLazyBody(): R|kotlin/String| {
         ^functionWithLazyBody String(42)
     }

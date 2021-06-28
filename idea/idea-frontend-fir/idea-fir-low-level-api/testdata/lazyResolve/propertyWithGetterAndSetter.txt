@@ -1,3 +1,4 @@
+
 RAW_FIR:
 FILE: propertyWithGetterAndSetter.kt
     public? final? [RAW_FIR] fun resolveMe(): R|kotlin/Unit| {
@@ -116,9 +117,9 @@ FILE: propertyWithGetterAndSetter.kt
         R|/receive|(R|/withGetterAndSetter|)
         R|/withGetterAndSetter| = Int(123)
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
         [STATUS] public get(): R|kotlin/Int| {
             ^ field#
         }
@@ -148,9 +149,9 @@ FILE: propertyWithGetterAndSetter.kt
         R|/receive|(R|/withGetterAndSetter|)
         R|/withGetterAndSetter| = Int(123)
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
         [STATUS] public get(): R|kotlin/Int| {
             ^ field#
         }
@@ -164,9 +165,9 @@ FILE: propertyWithGetterAndSetter.kt
         R|/receive|(R|/withGetterAndSetter|)
         R|/withGetterAndSetter| = Int(123)
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
         [STATUS] public get(): R|kotlin/Int| {
             ^ field#
         }
@@ -212,9 +213,9 @@ FILE: propertyWithGetterAndSetter.kt
         R|/receive|(R|/withGetterAndSetter|)
         R|/withGetterAndSetter| = Int(123)
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] fun receive([STATUS] value: R|kotlin/Int|): R|kotlin/Unit| {
     }
-    public final [STATUS] [ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
+    public final [STATUS] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=STATUS] var withGetterAndSetter: R|kotlin/Int| = IntegerLiteral(42)
         [STATUS] public get(): R|kotlin/Int| {
             ^ field#
         }
@@ -292,12 +293,12 @@ FILE: propertyWithGetterAndSetter.kt
         R|/receive|(R|/withGetterAndSetter|)
         R|/withGetterAndSetter| = Int(123)
     }
-    public final [BODY_RESOLVE] [ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun receive([BODY_RESOLVE] value: R|kotlin/Int|): R|kotlin/Unit| {
+    public final [BODY_RESOLVE] [FirDeprecationInfoKey=NoDeprecation, ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] fun receive([BODY_RESOLVE] value: R|kotlin/Int|): R|kotlin/Unit| {
     }
-    public final [BODY_RESOLVE] [IsReferredViaField=true, ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] var withGetterAndSetter: R|kotlin/Int| = Int(42)
+    public final [BODY_RESOLVE] [FirDeprecationInfoKey=NoDeprecation, IsReferredViaField=true, ResolvePhaseWithForAllDeclarationsKey=BODY_RESOLVE] var withGetterAndSetter: R|kotlin/Int| = Int(42)
         [BODY_RESOLVE] public get(): R|kotlin/Int| {
             ^ F|/withGetterAndSetter|
         }
-        [BODY_RESOLVE] public set([BODY_RESOLVE] value: R|kotlin/Int|): R|kotlin/Unit| {
+        [BODY_RESOLVE] public set([BODY_RESOLVE] [FirDeprecationInfoKey=NoDeprecation] value: R|kotlin/Int|): R|kotlin/Unit| {
             F|/withGetterAndSetter| = R|<local>/value|
         }

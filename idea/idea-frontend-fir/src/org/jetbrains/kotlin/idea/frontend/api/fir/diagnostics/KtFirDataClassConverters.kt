@@ -281,7 +281,7 @@ internal val KT_DIAGNOSTIC_CONVERTER = KtDiagnosticConverterBuilder.buildConvert
         DeprecationErrorImpl(
             firSymbolBuilder.buildSymbol(firDiagnostic.a.fir as FirDeclaration),
             firDiagnostic.b,
-            firDiagnostic as FirPsiDiagnostic<*>,
+            firDiagnostic as FirPsiDiagnostic,
             token,
         )
     }
@@ -289,7 +289,7 @@ internal val KT_DIAGNOSTIC_CONVERTER = KtDiagnosticConverterBuilder.buildConvert
         DeprecationImpl(
             firSymbolBuilder.buildSymbol(firDiagnostic.a.fir as FirDeclaration),
             firDiagnostic.b,
-            firDiagnostic as FirPsiDiagnostic<*>,
+            firDiagnostic as FirPsiDiagnostic,
             token,
         )
     }
