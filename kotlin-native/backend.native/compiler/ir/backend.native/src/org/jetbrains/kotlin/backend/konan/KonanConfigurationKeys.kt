@@ -156,6 +156,8 @@ class KonanConfigKeys {
                 = CompilerConfigurationKey.create("when to destroy runtime")
         val GARBAGE_COLLECTOR: CompilerConfigurationKey<GC> = CompilerConfigurationKey.create("gc")
         val GARBAGE_COLLECTOR_AGRESSIVE: CompilerConfigurationKey<Boolean> = CompilerConfigurationKey.create("turn on agressive GC mode")
+        val EXTERNAL_DEPENDENCIES: CompilerConfigurationKey<String?> =
+                CompilerConfigurationKey.create("use external dependencies to enhance IR linker error messages")
     }
 }
 
