@@ -10,10 +10,13 @@ import groovy.lang.Closure
 import org.gradle.api.DefaultTask
 import org.gradle.api.Project
 import org.gradle.api.artifacts.*
+import org.gradle.api.artifacts.component.ModuleComponentIdentifier
+import org.gradle.api.artifacts.component.ModuleComponentSelector
+import org.gradle.api.artifacts.result.DependencyResult
+import org.gradle.api.artifacts.result.ResolvedDependencyResult
 import org.gradle.api.file.ConfigurableFileCollection
 import org.gradle.api.file.FileCollection
 import org.gradle.api.file.FileTree
-import org.gradle.api.logging.Logger
 import org.gradle.api.provider.Provider
 import org.gradle.api.tasks.*
 import org.gradle.api.tasks.compile.AbstractCompile
@@ -33,7 +36,6 @@ import org.jetbrains.kotlin.gradle.targets.native.internal.isAllowCommonizer
 import org.jetbrains.kotlin.gradle.utils.*
 import org.jetbrains.kotlin.gradle.utils.klibModuleName
 import org.jetbrains.kotlin.gradle.utils.listFilesOrEmpty
-import org.jetbrains.kotlin.gradle.utils.newProperty
 import org.jetbrains.kotlin.konan.library.KLIB_INTEROP_IR_PROVIDER_IDENTIFIER
 import org.jetbrains.kotlin.konan.properties.resolvablePropertyList
 import org.jetbrains.kotlin.konan.properties.saveToFile
@@ -44,12 +46,13 @@ import org.jetbrains.kotlin.konan.target.HostManager
 import org.jetbrains.kotlin.konan.target.KonanTarget
 import org.jetbrains.kotlin.library.*
 import org.jetbrains.kotlin.project.model.LanguageSettings
+import org.jetbrains.kotlin.utils.ResolvedDependency as KResolvedDependency
+import org.jetbrains.kotlin.utils.ResolvedDependencyId as KResolvedDependencyId
+import org.jetbrains.kotlin.utils.ResolvedDependenciesSupport
 import java.io.File
-import java.nio.charset.StandardCharsets
-import java.security.MessageDigest
+import java.nio.file.Files
 import javax.inject.Inject
 import org.jetbrains.kotlin.konan.file.File as KFile
-import org.jetbrains.kotlin.util.Logger as KLogger
 
 // TODO: It's just temporary tasks used while KN isn't integrated with Big Kotlin compilation infrastructure.
 // region Useful extensions
@@ -112,9 +115,10 @@ private fun FileCollection.filterOutPublishableInteropLibs(project: Project): Fi
  *      for it (NO-SOURCE check). So we need to take this case into account
  *      and skip libraries that were not compiled. See also: GH-2617 (K/N repo).
  */
-private fun Collection<File>.filterKlibsPassedToCompiler(): List<File> = filter {
-    (it.extension == "klib" || it.isDirectory) && it.exists()
-}
+private val File.isKlibPassedToCompiler: Boolean
+    get() = (extension == "klib" || isDirectory) && exists()
+
+private fun Collection<File>.filterKlibsPassedToCompiler(): List<File> = filter { it.isKlibPassedToCompiler }
 
 // endregion
 abstract class AbstractKotlinNativeCompile<T : KotlinCommonToolOptions, K : KotlinNativeCompilationData<*>> : AbstractCompile() {
@@ -598,7 +602,10 @@ constructor(
     override fun buildCompilerArgs(): List<String> = mutableListOf<String>().apply {
         addAll(super.buildCompilerArgs())
 
-        addAll(CacheBuilder(project, binary, konanTarget).buildCompilerArgs())
+        val externalDependenciesArgs = ExternalDependenciesBuilder(project, binary).buildCompilerArgs()
+        addAll(externalDependenciesArgs)
+
+        addAll(CacheBuilder(project, binary, konanTarget, externalDependenciesArgs).buildCompilerArgs())
 
         addKey("-tr", processTests)
         addArgIfNotNull("-entry", entryPoint)
@@ -672,12 +679,92 @@ constructor(
         validatedExportedLibraries()
         super.compile()
     }
-
-    companion object {
-    }
 }
 
-internal class CacheBuilder(val project: Project, val binary: NativeBinary, val konanTarget: KonanTarget) {
+@Suppress("FunctionName")
+internal class ExternalDependenciesBuilder(val project: Project, val binary: NativeBinary) {
+    private val compilation: KotlinNativeCompilation
+        get() = binary.compilation
+
+    private val compileDependencyConfiguration: Configuration
+        get() = project.configurations.getByName(compilation.compileDependencyConfigurationName)
+
+    fun buildCompilerArgs(): List<String> {
+        val modules = loadDependencies()
+        if (modules.isEmpty()) return emptyList()
+
+        val dependencyFile = Files.createTempFile("kotlin-native-external-dependencies", ".deps").toAbsolutePath().toFile()
+        dependencyFile.deleteOnExit()
+        dependencyFile.writeText(ResolvedDependenciesSupport.serialize(modules))
+
+        return listOf("-Xexternal-dependencies=${dependencyFile.path}")
+    }
+
+    private fun loadDependencies(): Collection<KResolvedDependency> {
+        val moduleIdToArtifactPaths: MutableMap<KResolvedDependencyId, MutableSet<String>> = mutableMapOf()
+        compileDependencyConfiguration.incoming.artifacts.artifacts.mapNotNull { resolvedArtifact ->
+            val moduleId = (resolvedArtifact.id.componentIdentifier as? ModuleComponentIdentifier)?.let(::KResolvedDependencyId)
+                ?: return@mapNotNull null
+            val artifactPath = resolvedArtifact.file.absolutePath
+
+            moduleIdToArtifactPaths.getOrPut(moduleId) { mutableSetOf() } += artifactPath
+        }
+
+        val modules = mutableMapOf<KResolvedDependencyId, KResolvedDependency>()
+        fun processModule(resolvedDependency: DependencyResult, dependeeModuleId: KResolvedDependencyId) {
+            if (resolvedDependency !is ResolvedDependencyResult) return
+
+            val requestedModule = resolvedDependency.requested as? ModuleComponentSelector ?: return
+            val selectedModule = resolvedDependency.selected
+            val selectedModuleId = selectedModule.id as? ModuleComponentIdentifier ?: return
+
+            val moduleId = KResolvedDependencyId(requestedModule, selectedModuleId)
+            val module = modules.getOrPut(moduleId) {
+                val artifactPaths = moduleIdToArtifactPaths[moduleId]
+                    ?: if (moduleId.uniqueNames.size > 1)
+                        moduleId.uniqueNames.asSequence()
+                            .mapNotNull { uniqueName -> moduleIdToArtifactPaths[KResolvedDependencyId(uniqueName)] }
+                            .firstOrNull()
+                            ?: mutableSetOf()
+                    else mutableSetOf()
+
+                KResolvedDependency(
+                    id = moduleId,
+                    selectedVersion = selectedModuleId.version,
+                    requestedVersionsByDependees = mutableMapOf(), // to be filled in just below
+                    artifactPaths = artifactPaths
+                )
+            }
+
+            // Record the requested version of the module by the current dependee module.
+            module.requestedVersionsByDependees[dependeeModuleId] = requestedModule.version
+
+            selectedModule.dependencies.forEach { processModule(it, dependeeModuleId = moduleId) }
+        }
+
+        compileDependencyConfiguration.incoming.resolutionResult.root.dependencies.forEach { dependencyResult ->
+            processModule(dependencyResult, dependeeModuleId = KResolvedDependencyId.ROOT)
+        }
+
+        return modules.values
+    }
+
+    private fun KResolvedDependencyId(selectedModuleId: ModuleComponentIdentifier) =
+        KResolvedDependencyId("${selectedModuleId.group}:${selectedModuleId.module}")
+
+    private fun KResolvedDependencyId(requestedModule: ModuleComponentSelector, selectedModuleId: ModuleComponentIdentifier) =
+        KResolvedDependencyId(
+            "${requestedModule.group}:${requestedModule.module}",
+            "${selectedModuleId.group}:${selectedModuleId.module}"
+        )
+}
+
+internal class CacheBuilder(
+    val project: Project,
+    val binary: NativeBinary,
+    val konanTarget: KonanTarget,
+    val externalDependenciesArgs: List<String>
+) {
 
     private val nativeSingleFileResolveStrategy: SingleFileKlibResolveStrategy
         get() = CompilerSingleFileKlibResolveAllowingIrProvidersStrategy(
@@ -771,6 +858,7 @@ internal class CacheBuilder(val project: Project, val binary: NativeBinary, val 
             )
             if (debuggable)
                 args += "-g"
+            args += externalDependenciesArgs
             args += "-Xadd-cache=${library.libraryFile.absolutePath}"
             args += "-Xcache-directory=${cacheDirectory.absolutePath}"
             args += "-Xcache-directory=${rootCacheDirectory.absolutePath}"
