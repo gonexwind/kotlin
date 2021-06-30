@@ -30,8 +30,6 @@ static inline QualType GetQualType(CXType CT) {
 
 extern "C"
 int clang_isExtVectorType(CXType CT) {
-  static_assert(CINDEX_VERSION < 59, "Use CXType_ExtVector for this libclang version");
-
   QualType T = GetQualType(CT);
   const clang::Type *TP = T.getTypePtrOrNull();
   return TP && TP->isExtVectorType();

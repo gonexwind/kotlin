@@ -52,9 +52,14 @@ val ldflags = mutableListOf("$llvmDir/$libclang", "-L${libclangextDir.absolutePa
 if (libclangextIsEnabled) {
     assert(HostManager.hostIsMac)
     ldflags.addAll(listOf("-Wl,--no-demangle", "-Wl,-search_paths_first", "-Wl,-headerpad_max_install_names", "-Wl,-U,_futimens",
+                        // Let some symbols be undefined to avoid linking unnecessary parts
                        "-Wl,-U,__ZN4llvm7remarks11parseFormatENS_9StringRefE",
                        "-Wl,-U,__ZN4llvm7remarks22createRemarkSerializerENS0_6FormatENS0_14SerializerModeERNS_11raw_ostreamE",
-                       "-Wl,-U,__ZN4llvm7remarks14YAMLSerializerC1ERNS_11raw_ostreamENS0_14UseStringTableE"))
+                       "-Wl,-U,__ZN4llvm7remarks14YAMLSerializerC1ERNS_11raw_ostreamENS0_14UseStringTableE",
+                       "-Wl,-U,__ZN4llvm3omp22getOpenMPDirectiveNameENS0_9DirectiveE",
+                       "-Wl,-U,__ZN4llvm7remarks14RemarkStreamer13matchesFilterENS_9StringRefE",
+                       "-Wl,-U,__ZN4llvm7remarks14RemarkStreamer9setFilterENS_9StringRefE",
+                       "-Wl,-U,__ZN4llvm7remarks14RemarkStreamerC1ENSt3__110unique_ptrINS0_16RemarkSerializerENS2_14default_deleteIS4_EEEENS_8OptionalINS_9StringRefEEE"))
 
     val llvmLibs = listOf(
             "clangAST", "clangASTMatchers", "clangAnalysis", "clangBasic", "clangDriver", "clangEdit",
