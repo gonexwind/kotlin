@@ -6,11 +6,12 @@
 package org.jetbrains.kotlin.idea.fir.low.level.api.test.base
 
 import com.intellij.mock.MockProject
-import com.intellij.openapi.Disposable
-import com.intellij.openapi.util.Disposer
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElementFinder
+import org.jetbrains.kotlin.asJava.KotlinAsJavaSupport
 import org.jetbrains.kotlin.asJava.finder.JavaElementFinder
 import org.jetbrains.kotlin.fir.session.FirModuleInfoBasedModuleData
+import org.jetbrains.kotlin.idea.asJava.IDEKotlinAsJavaFirSupport
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.FirModuleResolveStateConfiguratorForSingleModuleTestImpl
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.TestModuleInfo
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.registerTestServices
@@ -32,7 +33,7 @@ import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.nameWithoutExtension
 
-abstract class AbstractLowLevelApiTest: TestWithDisposable() {
+abstract class AbstractLowLevelApiTest : TestWithDisposable() {
     private lateinit var testInfo: KotlinTestInfo
 
     private val configure: TestConfigurationBuilder.() -> Unit = {
@@ -66,6 +67,24 @@ abstract class AbstractLowLevelApiTest: TestWithDisposable() {
 
     open fun configureTest(builder: TestConfigurationBuilder) {}
 
+    private fun reRegisterJavaElementFinder(project: Project) {
+        PsiElementFinder.EP.getPoint(project).unregisterExtension(JavaElementFinder::class.java)
+        with(project as MockProject) {
+            picoContainer.registerComponentInstance(
+                "org.jetbrains.kotlin.idea.frontend.api.KtAnalysisSessionProvider",
+                Class.forName("org.jetbrains.kotlin.idea.frontend.api.fir.KtFirAnalysisSessionProvider")
+                    .getDeclaredConstructor(Project::class.java)
+                    .newInstance(project)
+            )
+
+            picoContainer.unregisterComponent(KotlinAsJavaSupport::class.qualifiedName)
+            picoContainer.registerComponentInstance(
+                KotlinAsJavaSupport::class.qualifiedName,
+                IDEKotlinAsJavaFirSupport(project)
+            )
+        }
+        PsiElementFinder.EP.getPoint(project).registerExtension(JavaElementFinder(project))
+    }
 
     protected fun runTest(path: String) {
         testDataPath = Paths.get(path)
@@ -82,7 +101,7 @@ abstract class AbstractLowLevelApiTest: TestWithDisposable() {
         val project = testServices.compilerConfigurationProvider.getProject(singleModule)
         val ktFiles = testServices.sourceFileProvider.getKtFilesForSourceFiles(singleModule.files, project)
 
-        PsiElementFinder.EP.getPoint(project).unregisterExtension(JavaElementFinder::class.java)
+        reRegisterJavaElementFinder(project)
 
         val moduleInfo = TestModuleInfo(singleModule)
         testServices.firModuleInfoProvider.registerModuleData(singleModule, FirModuleInfoBasedModuleData(moduleInfo))
