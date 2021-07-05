@@ -138,7 +138,7 @@ class JvmBackendContext(
 
     private val storageManager = LockBasedStorageManager("fake-overrides")
 
-    val resolveFakeOverrideFunction =
+    val resolveNonAbstractFakeOverride =
         storageManager.createMemoizedFunctionWithNullableValues { irFun: IrSimpleFunction ->
             irFun.resolveFakeOverride()
         }

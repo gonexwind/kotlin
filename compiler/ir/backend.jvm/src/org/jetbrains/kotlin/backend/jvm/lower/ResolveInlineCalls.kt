@@ -39,7 +39,7 @@ class ResolveInlineCalls(val context: JvmBackendContext) : IrElementTransformerV
             ?: return super.visitCall(expression)
         val resolved =
             maybeFakeOverrideOfMultiFileBridge.resolveMultiFileFacadeMember()
-                ?: context.resolveFakeOverrideFunction(maybeFakeOverrideOfMultiFileBridge)
+                ?: context.resolveNonAbstractFakeOverride(maybeFakeOverrideOfMultiFileBridge)
                 ?: return super.visitCall(expression)
         return super.visitCall(with(expression) {
             IrCallImpl(

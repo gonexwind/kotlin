@@ -16,7 +16,6 @@ import org.jetbrains.kotlin.backend.jvm.JvmBackendContext
 import org.jetbrains.kotlin.backend.jvm.JvmLoweredDeclarationOrigin
 import org.jetbrains.kotlin.backend.jvm.codegen.isJvmInterface
 import org.jetbrains.kotlin.backend.jvm.ir.*
-import org.jetbrains.kotlin.backend.jvm.lower.inlineclasses.unboxInlineClass
 import org.jetbrains.kotlin.codegen.AsmUtil
 import org.jetbrains.kotlin.config.JvmDefaultMode
 import org.jetbrains.kotlin.descriptors.DescriptorVisibilities
@@ -34,6 +33,7 @@ import org.jetbrains.kotlin.ir.types.*
 import org.jetbrains.kotlin.ir.util.*
 import org.jetbrains.kotlin.ir.visitors.IrElementTransformerVoid
 import org.jetbrains.kotlin.name.Name
+import org.jetbrains.kotlin.utils.SmartList
 import org.jetbrains.org.objectweb.asm.Type
 import org.jetbrains.org.objectweb.asm.commons.Method
 import java.util.concurrent.ConcurrentHashMap
@@ -122,11 +122,9 @@ internal val bridgePhase = makeIrFilePhase(
 
 internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass, IrElementTransformerVoid() {
     // Represents a synthetic bridge to `overridden` with a precomputed signature
-    private class Bridge(
-        val overridden: IrSimpleFunction,
-        val signature: Method,
+    private class Bridge(val overridden: IrSimpleFunction, val signature: Method) {
         val overriddenSymbols: MutableList<IrSimpleFunctionSymbol> = mutableListOf()
-    )
+    }
 
     // Represents a special bridge to `overridden`. Special bridges are overrides for Java methods which are
     // exposed to Kotlin with a different name or different types. Typically, the Java version of a method is
@@ -161,12 +159,8 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         val isOverriding: Boolean = true,
     )
 
-    private val potentialBridgeTargets = mutableListOf<IrSimpleFunction>()
-
     override fun lower(irFile: IrFile) {
         irFile.transformChildrenVoid()
-        generateBridges()
-        potentialBridgeTargets.clear()
     }
 
     override fun visitClass(declaration: IrClass): IrStatement {
@@ -174,34 +168,13 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         if (declaration.origin == JvmLoweredDeclarationOrigin.DEFAULT_IMPLS || declaration.isAnnotationClass)
             return super.visitClass(declaration)
 
-        declaration.functions.filterTo(potentialBridgeTargets, fun(irFunction: IrSimpleFunction): Boolean {
-            // Only overrides may need bridges and so in particular, private and static functions do not.
-            // Note that this includes the static replacements for inline class functions (which are static, but have
-            // overriddenSymbols in order to produce correct signatures in the type mapper).
-            if (DescriptorVisibilities.isPrivate(irFunction.visibility) || irFunction.isStatic || irFunction.overriddenSymbols.isEmpty())
-                return false
+        val potentialBridgeTargets = declaration.functions.filterTo(SmartList()) { it.isPotentialBridgeTarget() }
+        if (potentialBridgeTargets.isEmpty())
+            return super.visitClass(declaration)
 
-            // None of the methods of Any have type parameters and so we will not need bridges for them.
-            if (irFunction.isMethodOfAny())
-                return false
-
-            // We don't produce bridges for abstract functions in interfaces.
-            if (irFunction.isJvmAbstract(context.state.jvmDefaultMode)) {
-                if (irFunction.parentAsClass.isJvmInterface) {
-                    // If function requires a special bridge, we should record it for generic signatures generation.
-                    if (irFunction.specialBridgeOrNull != null) {
-                        context.functionsWithSpecialBridges.add(irFunction)
-                    }
-                    return false
-                }
-                return true
-            }
-
-            // Finally, the JVM backend also ignores concrete fake overrides whose implementation is directly inherited from an interface.
-            // This is sound, since we do not generate type-specialized versions of fake overrides and if the method
-            // were to override several interface methods the frontend would require a separate implementation.
-            return !irFunction.isFakeOverride || irFunction.resolvesToClass()
-        })
+        for (bridgeTarget in potentialBridgeTargets) {
+            createBridges(declaration, bridgeTarget)
+        }
 
         if (declaration.isInline) {
             // Inline class (implementing 'MutableCollection<T>', where T is Int or an inline class mapped to Int)
@@ -220,6 +193,35 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         return super.visitClass(declaration)
     }
 
+    private fun IrSimpleFunction.isPotentialBridgeTarget(): Boolean {
+        // Only overrides may need bridges and so in particular, private and static functions do not.
+        // Note that this includes the static replacements for inline class functions (which are static, but have
+        // overriddenSymbols in order to produce correct signatures in the type mapper).
+        if (DescriptorVisibilities.isPrivate(visibility) || isStatic || overriddenSymbols.isEmpty())
+            return false
+
+        // None of the methods of Any have type parameters and so we will not need bridges for them.
+        if (isMethodOfAny())
+            return false
+
+        // We don't produce bridges for abstract functions in interfaces.
+        if (isJvmAbstract(context.state.jvmDefaultMode)) {
+            if (parentAsClass.isJvmInterface) {
+                // If function requires a special bridge, we should record it for generic signatures generation.
+                if (specialBridgeOrNull != null) {
+                    context.functionsWithSpecialBridges.add(this)
+                }
+                return false
+            }
+            return true
+        }
+
+        // Finally, the JVM backend also ignores concrete fake overrides whose implementation is directly inherited from an interface.
+        // This is sound, since we do not generate type-specialized versions of fake overrides and if the method
+        // were to override several interface methods the frontend would require a separate implementation.
+        return !isFakeOverride || resolvesToClass()
+    }
+
     // Check whether a function maps to an abstract method.
     // For non-interface methods or interface methods coming from Java the modality is correct. Kotlin interface methods
     // are abstract unless they are annotated @PlatformDependent or compiled to JVM default (with @JvmDefault annotation or without)
@@ -227,7 +229,7 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
     private fun IrSimpleFunction.isJvmAbstract(jvmDefaultMode: JvmDefaultMode): Boolean {
         if (modality == Modality.ABSTRACT) return true
         if (!parentAsClass.isJvmInterface) return false
-        val targetFunction = context.resolveFakeOverrideFunction(this) ?: return true
+        val targetFunction = context.resolveNonAbstractFakeOverride(this) ?: return true
         return targetFunction.run { !isCompiledToJvmDefault(jvmDefaultMode) && !hasPlatformDependent() }
     }
 
@@ -238,22 +240,12 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         irFunction.body?.transform(VariableRemapper(mapOf(oldValueParameter to newValueParameter)), null)
     }
 
-    private fun generateBridges() {
-        for (member in potentialBridgeTargets) {
-            val parent = member.parentAsClass
-            createBridges(parent, member)
-        }
-    }
-
     private fun createBridges(irClass: IrClass, irFunction: IrSimpleFunction) {
         // Track final overrides and bridges to avoid clashes
         val blacklist = mutableSetOf<Method>()
-        val existingMethodSignatures = irClass.functions
-            .filter { !it.isFakeOverride && it.name == irFunction.name }
-            .mapTo(HashSet()) { it.jvmMethod }
 
         // Add the current method to the blacklist if it is concrete or final.
-        val targetMethod = (context.resolveFakeOverrideFunction(irFunction) ?: irFunction).jvmMethod
+        val targetMethod = (context.resolveNonAbstractFakeOverride(irFunction) ?: irFunction).jvmMethod
         if (!irFunction.isFakeOverride || irFunction.modality == Modality.FINAL)
             blacklist += targetMethod
 
@@ -315,7 +307,7 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
                     blacklist += bridgeTarget.jvmMethod
                 }
 
-                if (specialBridge.signature in existingMethodSignatures) {
+                if (irClass.functions.any { !it.isFakeOverride && it.name == irFunction.name && it.jvmMethod == specialBridge.signature }) {
                     return irFunction
                 }
 
@@ -355,9 +347,8 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
 
             val signature = override.jvmMethod
             if (targetMethod != signature && signature !in blacklist) {
-                generated.getOrPut(signature) {
-                    Bridge(override, signature)
-                }.overriddenSymbols += override.symbol
+                val bridge = generated.getOrPut(signature) { Bridge(override, signature) }
+                bridge.overriddenSymbols += override.symbol
             }
         }
 
@@ -371,7 +362,8 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         // This can still break binary compatibility, but it matches the behavior of the JVM backend.
         if (irFunction.isFakeOverride) {
             irFunction.overriddenSymbols.asSequence()
-                .map { it.owner }.filter { !it.isJvmAbstract(context.state.jvmDefaultMode) }
+                .map { it.owner }
+                .filter { !it.isJvmAbstract(context.state.jvmDefaultMode) }
                 .forEach { override ->
                     override.allOverridden()
                         .filter { !it.isFakeOverride }
@@ -379,25 +371,28 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
                 }
         }
 
-        generated.values.filter { it.signature !in blacklist }.forEach { irClass.addBridge(it, bridgeTarget) }
+        generated.values
+            .filter { it.signature !in blacklist }
+            .forEach { irClass.addBridge(it, bridgeTarget) }
     }
 
     // Returns the special bridge overridden by the current methods if it exists.
     private val IrSimpleFunction.specialBridgeOrNull: SpecialBridge?
         get() = context.bridgeLoweringCache.computeSpecialBridge(this)
 
-    private fun IrSimpleFunction.overriddenFinalSpecialBridges(): List<Method> = allOverridden().mapNotNullTo(mutableListOf()) {
-        // Ignore special bridges in interfaces or Java classes. While we never generate special bridges in Java
-        // classes, we may generate special bridges in interfaces for methods annotated with @JvmDefault.
-        // However, these bridges are not final and are thus safe to override.
-        //
-        // This matches the behavior of the JVM backend, but it's probably a bad idea since this is an
-        // opportunity for a Java and Kotlin implementation of the same interface to go out of sync.
-        if (it.parentAsClass.isInterface || it.isFromJava())
-            null
-        else
-            it.specialBridgeOrNull?.signature?.takeIf { bridgeSignature -> bridgeSignature != it.jvmMethod }
-    }
+    private fun IrSimpleFunction.overriddenFinalSpecialBridges(): List<Method> =
+        allOverridden().mapNotNullTo(mutableListOf()) {
+            // Ignore special bridges in interfaces or Java classes. While we never generate special bridges in Java
+            // classes, we may generate special bridges in interfaces for methods annotated with @JvmDefault.
+            // However, these bridges are not final and are thus safe to override.
+            //
+            // This matches the behavior of the JVM backend, but it's probably a bad idea since this is an
+            // opportunity for a Java and Kotlin implementation of the same interface to go out of sync.
+            if (it.parentAsClass.isInterface || it.isFromJava())
+                null
+            else
+                it.specialBridgeOrNull?.signature?.takeIf { bridgeSignature -> bridgeSignature != it.jvmMethod }
+        }
 
     // List of special bridge methods which were not implemented in Kotlin superclasses.
     private fun IrSimpleFunction.overriddenSpecialBridges(): List<SpecialBridge> {
@@ -615,8 +610,10 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
         // if its return type is a primitive type, and the new override's return type is an object type.
         private val signatureCache = ConcurrentHashMap<IrFunctionSymbol, Method>()
 
+        private val specialBridgeCache = ConcurrentHashMap<IrSimpleFunction, SpecialBridge?>()
+
         fun computeJvmMethod(function: IrFunction): Method =
-            signatureCache.getOrPut(function.symbol) { context.methodSignatureMapper.mapAsmMethod(function) }
+            signatureCache.computeIfAbsent(function.symbol) { context.methodSignatureMapper.mapAsmMethod(function) }
 
         private fun canHaveSpecialBridge(function: IrSimpleFunction): Boolean {
             if (function.name in specialBridgeMethods.specialMethodNames)
@@ -628,7 +625,10 @@ internal class BridgeLowering(val context: JvmBackendContext) : FileLoweringPass
             return false
         }
 
-        fun computeSpecialBridge(function: IrSimpleFunction): SpecialBridge? {
+        fun computeSpecialBridge(function: IrSimpleFunction): SpecialBridge? =
+            specialBridgeCache.computeIfAbsent(function) { computeSpecialBridgeInternal(it) }
+
+        private fun computeSpecialBridgeInternal(function: IrSimpleFunction): SpecialBridge? {
             // Optimization: do not try to compute special bridge for irrelevant methods.
             val correspondingProperty = function.correspondingPropertySymbol
             if (correspondingProperty != null) {
@@ -695,6 +695,3 @@ private fun IrSimpleFunction.resolvesToClass(): Boolean {
 
 private fun IrSimpleFunction.overriddenFromClass(): IrSimpleFunction? =
     overriddenSymbols.singleOrNull { !it.owner.parentAsClass.isJvmInterface }?.owner
-
-private val IrType.isInlineClassErasingToAny: Boolean
-    get() = unboxInlineClass().let { unboxed -> unboxed != this && (unboxed.isAny() || unboxed.isNullableAny()) }

@@ -104,7 +104,7 @@ class MemoizedInlineClassReplacements(
         val parentClass = parentClassOrNull ?: return false
         if (!parentClass.isInline) return false
 
-        val overridden = context.resolveFakeOverrideFunction(this) ?: return false
+        val overridden = context.resolveNonAbstractFakeOverride(this) ?: return false
         if (!overridden.parentAsClass.isJvmInterface) return false
         if (overridden.modality == Modality.ABSTRACT) return false
 

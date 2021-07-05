@@ -436,7 +436,7 @@ class MethodSignatureMapper(private val context: JvmBackendContext) {
                 continue
             }
             if (isSuperCall && !current.parentAsClass.isInterface &&
-                context.resolveFakeOverrideFunction(current)?.run {
+                context.resolveNonAbstractFakeOverride(current)?.run {
                     isMethodOfAny() || !isCompiledToJvmDefault(context.state.jvmDefaultMode)
                 } == true
             ) {
