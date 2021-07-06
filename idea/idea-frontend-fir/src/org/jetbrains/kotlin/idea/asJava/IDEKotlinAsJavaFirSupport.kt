@@ -111,4 +111,7 @@ class IDEKotlinAsJavaFirSupport(private val project: Project) : KotlinAsJavaSupp
 
     override fun getFakeLightClass(classOrObject: KtClassOrObject): KtFakeLightClass =
         KtFirBasedFakeLightClass(classOrObject)
+
+    override fun createFacadeForSyntheticFile(facadeClassFqName: FqName, file: KtFile): PsiClass =
+        TODO("Not implemented")
 }
