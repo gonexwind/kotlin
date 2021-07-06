@@ -42,7 +42,7 @@ object FirDeprecationChecker : FirBasicExpressionChecker() {
         callSite: FirElement?,
         context: CheckerContext,
         reporter: DiagnosticReporter
-    ) where T : FirAnnotatedDeclaration, T : FirSymbolOwner<*> {
+    ) where T : FirAnnotatedDeclaration {
         val deprecation = getWorstDeprecation(callSite, referencedFir, context) ?: return
         val diagnostic = when (deprecation.level) {
             DeprecationLevelValue.ERROR, DeprecationLevelValue.HIDDEN -> FirErrors.DEPRECATION_ERROR

@@ -62,6 +62,8 @@ class FirSyntheticProperty(
     override val receiverTypeRef: FirTypeRef?
         get() = null
 
+    override var deprecation: DeprecationsPerUseSite? = null
+
     override val isVal: Boolean
         get() = !isVar
 
@@ -140,6 +142,10 @@ class FirSyntheticProperty(
 
     override fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?) {
         throw AssertionError("Mutation of synthetic property isn't supported")
+    }
+
+    override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?) {
+        deprecation = newDeprecation
     }
 
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?) {

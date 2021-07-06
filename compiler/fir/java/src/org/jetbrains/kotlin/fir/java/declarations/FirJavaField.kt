@@ -50,6 +50,7 @@ class FirJavaField @FirImplementationDetail constructor(
     }
 
     override val receiverTypeRef: FirTypeRef? get() = null
+    override var deprecation: DeprecationsPerUseSite? = null
     override val isVal: Boolean get() = !isVar
     override val getter: FirPropertyAccessor? get() = null
     override val setter: FirPropertyAccessor? get() = null
@@ -133,6 +134,10 @@ class FirJavaField @FirImplementationDetail constructor(
     }
 
     override fun replaceReceiverTypeRef(newReceiverTypeRef: FirTypeRef?) {}
+
+    override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?) {
+        deprecation = newDeprecation
+    }
 
     override fun <D> transformDelegate(transformer: FirTransformer<D>, data: D): FirField {
         return this

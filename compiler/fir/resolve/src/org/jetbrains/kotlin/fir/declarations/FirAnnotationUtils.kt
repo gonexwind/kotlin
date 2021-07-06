@@ -15,6 +15,7 @@ import org.jetbrains.kotlin.fir.symbols.ConeClassLikeLookupTag
 import org.jetbrains.kotlin.fir.symbols.impl.FirCallableSymbol
 import org.jetbrains.kotlin.fir.types.ConeClassLikeType
 import org.jetbrains.kotlin.fir.types.coneType
+import org.jetbrains.kotlin.fir.types.coneTypeSafe
 import org.jetbrains.kotlin.fir.types.coneTypeUnsafe
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
@@ -97,9 +98,11 @@ fun FirAnnotationContainer.getAnnotationByFqName(fqName: FqName): FirAnnotationC
     }
 }
 
-fun FirAnnotationContainer.getAnnotationsByFqName(fqName: FqName): List<FirAnnotationCall> {
-    return annotations.filter {
-        it.annotationTypeRef.coneTypeUnsafe<ConeClassLikeType>().lookupTag.classId.asSingleFqName() == fqName
+fun FirAnnotationContainer.getAnnotationsByFqName(fqName: FqName): List<FirAnnotationCall> = annotations.getAnnotationsByFqName(fqName)
+
+fun List<FirAnnotationCall>.getAnnotationsByFqName(fqName: FqName): List<FirAnnotationCall> {
+    return filter {
+        it.annotationTypeRef.coneTypeSafe<ConeClassLikeType>()?.lookupTag?.classId?.asSingleFqName() == fqName
     }
 }
 

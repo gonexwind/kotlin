@@ -294,6 +294,7 @@ class FirSignatureEnhancement(
             else -> throw AssertionError("Unknown Java method to enhance: ${firMethod.render()}")
         }.apply {
             annotations += firMethod.annotations
+            deprecation = annotations.getOwnDeprecationInfoFromAnnotations(session.languageVersionSettings.apiVersion, fromJava = true)
         }.build()
 
         return function.symbol

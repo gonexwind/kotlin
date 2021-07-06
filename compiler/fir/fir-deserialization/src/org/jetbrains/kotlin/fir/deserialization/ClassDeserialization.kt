@@ -219,6 +219,8 @@ fun deserializeClassToSymbol(
 
         it.sourceElement = containerSource
 
+        it.replaceDeprecation(it.getOwnDeprecationInfo(session.languageVersionSettings.apiVersion))
+
         classProto.getExtensionOrNull(JvmProtoBuf.classModuleName)?.let { idx ->
             it.moduleName = nameResolver.getString(idx)
         }
