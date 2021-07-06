@@ -67,6 +67,7 @@ fun RepositoryHandler.kotlinBuildLocalRepo(project: Project): IvyArtifactReposit
         ivy("[organisation]/${project.ideModuleName()}/[revision]/ivy/[module].ivy.xml") // bundled plugins
 
         artifact("[organisation]/[module]/[revision]/artifacts/lib/[artifact](-[classifier]).[ext]")
+        artifact("[organisation]/[module]/[revision]/artifacts/plugins/java/lib/[artifact](-[classifier]).[ext]")
         artifact("[organisation]/[module]/[revision]/artifacts/[artifact](-[classifier]).[ext]")
         artifact("[organisation]/intellij-core/[revision]/artifacts/[artifact](-[classifier]).[ext]")
         artifact("[organisation]/${project.ideModuleName()}/[revision]/artifacts/plugins/[module]/lib/[artifact](-[classifier]).[ext]") // bundled plugins
