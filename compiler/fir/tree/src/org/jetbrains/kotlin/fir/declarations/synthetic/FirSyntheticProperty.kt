@@ -29,7 +29,8 @@ class FirSyntheticProperty(
     override val status: FirDeclarationStatus,
     override var resolvePhase: FirResolvePhase,
     override val getter: FirSyntheticPropertyAccessor,
-    override val setter: FirSyntheticPropertyAccessor? = null
+    override val setter: FirSyntheticPropertyAccessor? = null,
+    override val deprecation: DeprecationsPerUseSite? = null
 ) : FirProperty() {
     init {
         symbol.bind(this)
@@ -61,8 +62,6 @@ class FirSyntheticProperty(
 
     override val receiverTypeRef: FirTypeRef?
         get() = null
-
-    override var deprecation: DeprecationsPerUseSite? = null
 
     override val isVal: Boolean
         get() = !isVar
@@ -145,7 +144,7 @@ class FirSyntheticProperty(
     }
 
     override fun replaceDeprecation(newDeprecation: DeprecationsPerUseSite?) {
-        deprecation = newDeprecation
+        throw AssertionError("Mutation of synthetic property isn't supported")
     }
 
     override fun replaceControlFlowGraphReference(newControlFlowGraphReference: FirControlFlowGraphReference?) {

@@ -12,7 +12,7 @@ import org.jetbrains.kotlin.utils.keysToMapExceptNulls
 
 class DeprecationsPerUseSite(
     val all: Deprecation?,
-    private val bySpecificSite: Map<AnnotationUseSiteTarget, Deprecation>?
+    val bySpecificSite: Map<AnnotationUseSiteTarget, Deprecation>?
 ) {
     fun forUseSite(vararg sites: AnnotationUseSiteTarget): Deprecation? {
         if (bySpecificSite != null) {
@@ -65,6 +65,19 @@ class DeprecationsPerUseSite(
     override fun toString(): String =
         if (isEmpty()) "NoDeprecation"
         else "org.jetbrains.kotlin.fir.declarations.DeprecationInfoForUseSites(all=$all, bySpecificSite=$bySpecificSite)"
+
+    companion object {
+        fun fromMap(perUseSite: Map<AnnotationUseSiteTarget?, Deprecation>): DeprecationsPerUseSite {
+            if (perUseSite.isEmpty()) return EmptyDeprecationsPerUseSite
+
+            @Suppress("UNCHECKED_CAST")
+            val specificCallSite = perUseSite.filterKeys { it != null } as Map<AnnotationUseSiteTarget, Deprecation>
+            return DeprecationsPerUseSite(
+                perUseSite[null],
+                specificCallSite.takeIf { it.isNotEmpty() }
+            )
+        }
+    }
 
 }
 

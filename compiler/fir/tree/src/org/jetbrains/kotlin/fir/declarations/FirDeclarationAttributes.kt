@@ -15,8 +15,6 @@ import kotlin.reflect.KProperty
 
 abstract class FirDeclarationDataKey
 
-interface NotCopyableDataKeyMarker
-
 class FirDeclarationAttributes : AttributeArrayOwner<FirDeclarationDataKey, Any> {
     override val typeRegistry: TypeRegistry<FirDeclarationDataKey, Any>
         get() = FirDeclarationDataRegistry
@@ -32,12 +30,7 @@ class FirDeclarationAttributes : AttributeArrayOwner<FirDeclarationDataKey, Any>
         }
     }
 
-    fun copy(): FirDeclarationAttributes {
-        val result = FirDeclarationAttributes(arrayMap.copy())
-        val keysToRemove = result.typeRegistry.allKeys().filter { NotCopyableDataKeyMarker::class.java.isAssignableFrom(it.java) }
-        keysToRemove.forEach { result.removeComponent(it) }
-        return result
-    }
+    fun copy(): FirDeclarationAttributes = FirDeclarationAttributes(arrayMap.copy())
 }
 
 /*
