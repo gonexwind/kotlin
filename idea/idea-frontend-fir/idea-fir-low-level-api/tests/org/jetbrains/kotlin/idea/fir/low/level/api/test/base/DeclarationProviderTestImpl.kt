@@ -62,7 +62,7 @@ internal class DeclarationProviderTestImpl(
 
     override fun getFacadeFilesInPackage(packageFqName: FqName): Collection<KtFile> =
         filesByPackage(packageFqName)
-            .filter { file -> file.declarations.any { it is KtProperty || it is KtNamedFunction } }
+            .filter { file -> file.hasTopLevelCallables() }
             .toSet()
 
     override fun findFilesForFacade(facadeFqName: FqName): Collection<KtFile> {

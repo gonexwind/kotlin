@@ -32,6 +32,8 @@ import org.jetbrains.kotlin.idea.fir.low.level.api.api.DiagnosticCheckerFilter
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.FirModuleResolveStateConfigurator
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.KotlinOutOfBlockModificationTrackerFactory
 import org.jetbrains.kotlin.idea.fir.low.level.api.api.getOrBuildFirFile
+import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.*
+import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.AbstractLowLevelApiTest.Companion.reRegisterJavaElementFinder
 import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.DeclarationProviderTestImpl
 import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.KotlinOutOfBlockModificationTrackerFactoryTestImpl
 import org.jetbrains.kotlin.idea.fir.low.level.api.test.base.KtPackageProviderTestImpl
@@ -99,25 +101,6 @@ abstract class AbstractCompilerBasedTest : AbstractKotlinCompilerTest() {
 
         override val additionalDirectives: List<DirectivesContainer>
             get() = listOf(FirDiagnosticsDirectives)
-
-        private fun reRegisterJavaElementFinder(project: Project) {
-            PsiElementFinder.EP.getPoint(project).unregisterExtension(JavaElementFinder::class.java)
-            with(project as MockProject) {
-                picoContainer.registerComponentInstance(
-                    "org.jetbrains.kotlin.idea.frontend.api.KtAnalysisSessionProvider",
-                    Class.forName("org.jetbrains.kotlin.idea.frontend.api.fir.KtFirAnalysisSessionProvider")
-                        .getDeclaredConstructor(Project::class.java)
-                        .newInstance(project)
-                )
-
-                picoContainer.unregisterComponent(KotlinAsJavaSupport::class.qualifiedName)
-                picoContainer.registerComponentInstance(
-                    KotlinAsJavaSupport::class.qualifiedName,
-                    IDEKotlinAsJavaFirSupport(project)
-                )
-            }
-            PsiElementFinder.EP.getPoint(project).registerExtension(JavaElementFinder(project))
-        }
 
         override fun analyze(module: TestModule): FirOutputArtifact {
             val project = testServices.compilerConfigurationProvider.getProject(module)

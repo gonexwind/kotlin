@@ -9,6 +9,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Key
 import com.intellij.psi.PsiClass
 import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.util.SmartList
 import org.jetbrains.kotlin.asJava.KotlinAsJavaSupport
 import org.jetbrains.kotlin.asJava.classes.KtFakeLightClass
 import org.jetbrains.kotlin.asJava.classes.KtLightClass
@@ -19,6 +20,7 @@ import org.jetbrains.kotlin.idea.fir.low.level.api.createDeclarationProvider
 import org.jetbrains.kotlin.idea.fir.low.level.api.createPackageProvider
 import org.jetbrains.kotlin.name.ClassId
 import org.jetbrains.kotlin.name.FqName
+import org.jetbrains.kotlin.name.parentOrNull
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.KtScript
@@ -44,8 +46,27 @@ class IDEKotlinAsJavaFirSupport(private val project: Project) : KotlinAsJavaSupp
             }
         }
 
+    private fun FqName.toClassIdSequence(): Sequence<ClassId> {
+        var currentName = shortNameOrSpecial()
+        if (currentName.isSpecial) return emptySequence()
+        var currentParent = parentOrNull() ?: return emptySequence()
+        var currentRelativeName = currentName.asString()
+
+        return sequence {
+            while (true) {
+                yield(ClassId(currentParent, FqName(currentRelativeName), false))
+                currentName = currentParent.shortNameOrSpecial()
+                if (currentName.isSpecial) break
+                currentParent = currentParent.parentOrNull() ?: break
+                currentRelativeName = "${currentName.asString()}.$currentRelativeName"
+            }
+        }
+    }
+
     override fun findClassOrObjectDeclarations(fqName: FqName, searchScope: GlobalSearchScope): Collection<KtClassOrObject> =
-        project.createDeclarationProvider(searchScope).getClassesByClassId(ClassId.topLevel(fqName))
+        fqName.toClassIdSequence().flatMap {
+            project.createDeclarationProvider(searchScope).getClassesByClassId(it)
+        }.toSet()
 
     override fun packageExists(fqName: FqName, scope: GlobalSearchScope): Boolean =
         project.createPackageProvider(scope).isPackageExists(fqName)
@@ -68,10 +89,10 @@ class IDEKotlinAsJavaFirSupport(private val project: Project) : KotlinAsJavaSupp
         } ?: emptyList()
 
     override fun getScriptClasses(scriptFqName: FqName, scope: GlobalSearchScope): Collection<PsiClass> =
-        emptyList()
+        error("Should not be called")
 
     override fun getKotlinInternalClasses(fqName: FqName, scope: GlobalSearchScope): Collection<PsiClass> =
-        emptyList()
+        emptyList() //TODO Implement if necessary for fir
 
     override fun getFacadeClassesInPackage(packageFqName: FqName, scope: GlobalSearchScope): Collection<PsiClass> =
         project.createDeclarationProvider(scope)

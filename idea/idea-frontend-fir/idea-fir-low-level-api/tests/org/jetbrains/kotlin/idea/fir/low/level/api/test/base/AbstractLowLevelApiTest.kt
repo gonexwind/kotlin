@@ -15,6 +15,9 @@ import org.jetbrains.kotlin.idea.asJava.IDEKotlinAsJavaFirSupport
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.FirModuleResolveStateConfiguratorForSingleModuleTestImpl
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.TestModuleInfo
 import org.jetbrains.kotlin.idea.fir.low.level.api.compiler.based.registerTestServices
+import org.jetbrains.kotlin.idea.frontend.api.InvalidWayOfUsingAnalysisSession
+import org.jetbrains.kotlin.idea.frontend.api.KtAnalysisSessionProvider
+import org.jetbrains.kotlin.idea.frontend.api.fir.KtFirAnalysisSessionProvider
 import org.jetbrains.kotlin.platform.jvm.JvmPlatforms
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.test.builders.TestConfigurationBuilder
@@ -67,23 +70,23 @@ abstract class AbstractLowLevelApiTest : TestWithDisposable() {
 
     open fun configureTest(builder: TestConfigurationBuilder) {}
 
-    private fun reRegisterJavaElementFinder(project: Project) {
-        PsiElementFinder.EP.getPoint(project).unregisterExtension(JavaElementFinder::class.java)
-        with(project as MockProject) {
-            picoContainer.registerComponentInstance(
-                "org.jetbrains.kotlin.idea.frontend.api.KtAnalysisSessionProvider",
-                Class.forName("org.jetbrains.kotlin.idea.frontend.api.fir.KtFirAnalysisSessionProvider")
-                    .getDeclaredConstructor(Project::class.java)
-                    .newInstance(project)
-            )
-
-            picoContainer.unregisterComponent(KotlinAsJavaSupport::class.qualifiedName)
-            picoContainer.registerComponentInstance(
-                KotlinAsJavaSupport::class.qualifiedName,
-                IDEKotlinAsJavaFirSupport(project)
-            )
+    companion object {
+        @OptIn(InvalidWayOfUsingAnalysisSession::class)
+        fun reRegisterJavaElementFinder(project: Project) {
+            PsiElementFinder.EP.getPoint(project).unregisterExtension(JavaElementFinder::class.java)
+            with(project as MockProject) {
+                picoContainer.registerComponentInstance(
+                    KtAnalysisSessionProvider::class.qualifiedName,
+                    KtFirAnalysisSessionProvider(this)
+                )
+                picoContainer.unregisterComponent(KotlinAsJavaSupport::class.qualifiedName)
+                picoContainer.registerComponentInstance(
+                    KotlinAsJavaSupport::class.qualifiedName,
+                    IDEKotlinAsJavaFirSupport(project)
+                )
+            }
+            PsiElementFinder.EP.getPoint(project).registerExtension(JavaElementFinder(project))
         }
-        PsiElementFinder.EP.getPoint(project).registerExtension(JavaElementFinder(project))
     }
 
     protected fun runTest(path: String) {
