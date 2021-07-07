@@ -1,6 +1,6 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. Use of this source code is governed by the Apache 2.0 license
- * that can be found in the LICENSE file.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
 package kotlin.text
@@ -150,6 +150,12 @@ public actual class Regex internal constructor(internal val nativePattern: Patte
     /** Indicates whether the regular expression can find at least one match in the specified [input]. */
     actual fun containsMatchIn(input: CharSequence): Boolean = find(input) != null
 
+
+    actual fun containsMatchAt(input: CharSequence, index: Int): Boolean =
+            // TODO: expand and simplify
+            findAt(input, index) != null
+
+
     /**
      * Returns the first match of a regular expression in the [input], beginning at the specified [startIndex].
      *
@@ -173,6 +179,21 @@ public actual class Regex internal constructor(internal val nativePattern: Patte
         } else {
             return null
         }
+    }
+
+    public actual fun findAt(input: CharSequence, index: Int): MatchResult? {
+        if (index < 0 || index > input.length) {
+            throw IndexOutOfBoundsException("Start index is out of bounds: $startIndex, input length: ${input.length}")
+        }
+        val matchResult = MatchResultImpl(input, this)
+        matchResult.mode = Mode.FIND
+        matchResult.startIndex = index
+        val matches = startNode.matches(index, input, matchResult) >= 0
+        if (!matches) {
+            return null
+        }
+        matchResult.finalizeMatch()
+        return matchResult
     }
 
     /**

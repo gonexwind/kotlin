@@ -52,6 +52,11 @@ public actual class Regex actual constructor(pattern: String, options: Set<Regex
     /** The set of options that were used to create this regular expression. */
     public actual val options: Set<RegexOption> = options.toSet()
     private val nativePattern: RegExp = RegExp(pattern, options.joinToString(separator = "", prefix = "gu") { it.value })
+    private var nativeStickyPattern: RegExp? = null
+    private fun initStickyPattern(): RegExp =
+        nativeStickyPattern ?:
+            RegExp(pattern, options.joinToString(separator = "", prefix = "guy") { it.value }).also { nativeStickyPattern = it }
+
 
     /** Indicates whether the regular expression matches the entire [input]. */
     public actual infix fun matches(input: CharSequence): Boolean {
@@ -64,6 +69,15 @@ public actual class Regex actual constructor(pattern: String, options: Set<Regex
     public actual fun containsMatchIn(input: CharSequence): Boolean {
         nativePattern.reset()
         return nativePattern.test(input.toString())
+    }
+
+    public actual fun containsMatchAt(input: CharSequence, index: Int): Boolean {
+        if (index < 0 || index > input.length) {
+            throw IndexOutOfBoundsException("index out of bounds: $index, input length: ${input.length}")
+        }
+        val pattern = initStickyPattern()
+        pattern.lastIndex = index
+        return pattern.test(input.toString())
     }
 
     /**
@@ -108,6 +122,14 @@ public actual class Regex actual constructor(pattern: String, options: Set<Regex
         else
             return Regex("^${pattern.trimStart('^').trimEnd('$')}$", options).find(input)
     }
+
+    public actual fun findAt(input: CharSequence, index: Int): MatchResult? {
+        if (index < 0 || index > input.length) {
+            throw IndexOutOfBoundsException("index out of bounds: $index, input length: ${input.length}")
+        }
+        return initStickyPattern().findNext(input.toString(), index)
+    }
+
 
     /**
      * Replaces all occurrences of this regular expression in the specified [input] string with specified [replacement] expression.

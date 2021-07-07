@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -177,6 +177,29 @@ class RegexTest {
 
         assertEquals("aaaab", regex.find(input)!!.value)
         assertEquals("aaaabbbb", regex.matchEntire(input)!!.value)
+    }
+
+    @Test fun matchAt() {
+        val regex = Regex("[a-z][1-5]")
+        val input = "...a4...b1"
+        val positions = 0..input.length
+
+        val matchIndices = positions.filter { index -> regex.containsMatchAt(input, index) }
+        assertEquals(listOf(3, 8), matchIndices)
+        val reversedIndices = positions.reversed().filter { index -> regex.containsMatchAt(input, index) }.reversed()
+        assertEquals(matchIndices, reversedIndices)
+
+        val matches = positions.mapNotNull { index -> regex.findAt(input, index)?.let { index to it } }
+        assertEquals(matchIndices, matches.map { it.first })
+        matches.forEach { (index, match) ->
+            assertEquals(index..index + 1, match.range)
+            assertEquals(input.substring(match.range), match.value)
+        }
+
+        for (index in listOf(-1, input.length + 1)) {
+            assertFailsWith<IndexOutOfBoundsException> { regex.findAt(input, index) }
+            assertFailsWith<IndexOutOfBoundsException> { regex.containsMatchAt(input, index) }
+        }
     }
 
     @Test fun escapeLiteral() {

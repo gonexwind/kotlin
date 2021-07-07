@@ -1,5 +1,5 @@
 /*
- * Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
+ * Copyright 2010-2021 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
  */
 
@@ -38,6 +38,9 @@ expect class Regex {
      * @sample samples.text.Regexps.findAll
      */
     fun findAll(input: CharSequence, startIndex: Int = 0): Sequence<MatchResult>
+
+    fun findAt(input: CharSequence, index: Int): MatchResult?
+    fun containsMatchAt(input: CharSequence, index: Int): Boolean
 
     /**
      * Splits the [input] CharSequence around matches of this regular expression.
