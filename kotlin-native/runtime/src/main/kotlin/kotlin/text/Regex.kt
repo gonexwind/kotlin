@@ -183,7 +183,7 @@ public actual class Regex internal constructor(internal val nativePattern: Patte
 
     public actual fun findAt(input: CharSequence, index: Int): MatchResult? {
         if (index < 0 || index > input.length) {
-            throw IndexOutOfBoundsException("Start index is out of bounds: $startIndex, input length: ${input.length}")
+            throw IndexOutOfBoundsException("index is out of bounds: $index, input length: ${input.length}")
         }
         val matchResult = MatchResultImpl(input, this)
         matchResult.mode = Mode.FIND
